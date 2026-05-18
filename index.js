@@ -28,6 +28,13 @@ async function run() {
     const db = client.db("homeForPawsDB");
     const petsCollection = db.collection("pets");
 
+    // for display the data in ui
+    app.get("/pet", async (req, res) => {
+      const result = await petsCollection.find().toArray();
+      res.json(result);
+    });
+
+    // receiving the data from client
     app.post("/pet", async (req, res) => {
       const petData = req.body;
       console.log("data from backend", petData);
