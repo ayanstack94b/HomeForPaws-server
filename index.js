@@ -43,6 +43,35 @@ async function run() {
       res.json(result);
     });
 
+    app.put("/pet/:id", async (req, res) => {
+      const id = req.params.id;
+
+      const updatedPet = req.body;
+
+      const query = {
+        _id: new ObjectId(id),
+      };
+
+      const updatedDoc = {
+        $set: {
+          petName: updatedPet.petName,
+          species: updatedPet.species,
+          breed: updatedPet.breed,
+          gender: updatedPet.gender,
+          image: updatedPet.image,
+          location: updatedPet.location,
+          adoptionFee: updatedPet.adoptionFee,
+          healthStatus: updatedPet.healthStatus,
+          vaccinationStatus: updatedPet.vaccinationStatus,
+          description: updatedPet.description,
+        },
+      };
+
+      const result = await petsCollection.updateOne(query, updatedDoc);
+
+      res.send(result);
+    });
+
     // Delete pets
     app.delete("/pet/:id", async (req, res) => {
       const id = req.params.id;
