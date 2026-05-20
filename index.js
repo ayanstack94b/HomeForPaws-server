@@ -28,6 +28,7 @@ async function run() {
 
     const db = client.db("homeForPawsDB");
     const petsCollection = db.collection("pets");
+    const adoptionCollection = db.collection("adoptionRequests");
 
     // for display the data in ui
     app.get("/pet", async (req, res) => {
@@ -68,6 +69,14 @@ async function run() {
       };
 
       const result = await petsCollection.updateOne(query, updatedDoc);
+
+      res.send(result);
+    });
+
+    app.post("/adoption-request", async (req, res) => {
+      const adoptionData = req.body;
+
+      const result = await adoptionCollection.insertOne(adoptionData);
 
       res.send(result);
     });
