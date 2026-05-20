@@ -1,19 +1,22 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
-const { ObjectId } = require("mongodb");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT;
 
-app.use(express.json());
+// middleware
 app.use(cors());
+app.use(express.json());
 
+// mongodb uri
 const uri = process.env.MONGO_URI;
 
+// mongodb client
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -26,24 +29,31 @@ async function run() {
   try {
     await client.connect();
 
+    // database
     const db = client.db("homeForPawsDB");
+
+    // collections
     const petsCollection = db.collection("pets");
+
     const adoptionCollection = db.collection("adoptionRequests");
 
-    // for display the data in ui
+    // get all pets
     app.get("/pet", async (req, res) => {
       const result = await petsCollection.find().toArray();
-      res.json(result);
+
+      res.send(result);
     });
 
-    // receiving the data from client
+    // add pet
     app.post("/pet", async (req, res) => {
       const petData = req.body;
-      console.log("data from backend", petData);
+
       const result = await petsCollection.insertOne(petData);
-      res.json(result);
+
+      res.send(result);
     });
 
+    // update pet
     app.put("/pet/:id", async (req, res) => {
       const id = req.params.id;
 
@@ -73,15 +83,7 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/adoption-request", async (req, res) => {
-      const adoptionData = req.body;
-
-      const result = await adoptionCollection.insertOne(adoptionData);
-
-      res.send(result);
-    });
-
-    // Delete pets
+    // delete pet
     app.delete("/pet/:id", async (req, res) => {
       const id = req.params.id;
 
@@ -94,20 +96,77 @@ async function run() {
       res.send(result);
     });
 
+    // get adoption requests
+    app.get("/adoption-request", async (req, res) => {
+      const email = req.query.email;
+
+      const query = {
+        adopterEmail: email,
+      };
+
+      const result = await adoptionCollection.find(query).toArray();
+
+      res.send(result);
+    });
+
+    // add adoption request
+    app.post("/adoption-request", async (req, res) => {
+      const adoptionData = req.body;
+
+      const query = {
+        petId: adoptionData.petId,
+
+        adopterEmail: adoptionData.adopterEmail,
+      };
+
+      const alreadyExists = await adoptionCollection.findOne(query);
+
+      if (alreadyExists) {
+        return res.send({
+          inserted: false,
+
+          message: "request already exists",
+        });
+      }
+
+      const result = await adoptionCollection.insertOne(adoptionData);
+
+      res.send({
+        inserted: true,
+
+        insertedId: result.insertedId,
+      });
+    });
+
+    // cancel adoption request
+    app.delete("/adoption-request/:id", async (req, res) => {
+      const id = req.params.id;
+
+      const query = {
+        _id: new ObjectId(id),
+      };
+
+      const result = await adoptionCollection.deleteOne(query);
+
+      res.send(result);
+    });
+
+    // mongodb ping
     await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!",
-    );
+
+    console.log("mongodb connected successfully");
   } finally {
-    // await client.close();
   }
 }
+
 run().catch(console.dir);
 
+// default route
 app.get("/", (req, res) => {
   res.send("Home For Paws server is running fine");
 });
 
+// server running
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
+  console.log(`server running on port ${port}`);
 });
