@@ -12,7 +12,12 @@ const app = express();
 const port = process.env.PORT;
 
 // middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use(cookieParser());
 
@@ -68,6 +73,10 @@ async function run() {
     app.post("/jwt", async (req, res) => {
       const user = req.body;
 
+      console.log("jwt route hit");
+
+      console.log(user);
+
       const token = jwt.sign(user, process.env.JWT_SECRET, {
         expiresIn: "7d",
       });
@@ -76,12 +85,15 @@ async function run() {
         .cookie("token", token, {
           httpOnly: true,
           secure: false,
+          sameSite: "lax",
         })
         .send({
           success: true,
         });
     });
-    // All routes starts here
+
+    // ================================ All Api routes starts here =========================================
+
     // get pets
     app.get("/pet", async (req, res) => {
       const email = req.query.email;
@@ -118,7 +130,7 @@ async function run() {
     });
 
     // add pet
-    app.post("/pet", verifyToken, async (req, res) => {
+    app.post("/pet",  async (req, res) => {
       const petData = req.body;
 
       const result = await petsCollection.insertOne(petData);
@@ -170,7 +182,7 @@ async function run() {
     });
 
     // delete pet
-    app.delete("/pet/:id", verifyToken, async (req, res)=> {
+    app.delete("/pet/:id",  async (req, res) => {
       const id = req.params.id;
 
       const query = {
@@ -204,7 +216,7 @@ async function run() {
     });
 
     // add adoption request
-    app.post("/adoption-request",verifyToken, async (req, res) => {
+    app.post("/adoption-request",  async (req, res) => {
       const adoptionData = req.body;
 
       const query = {
