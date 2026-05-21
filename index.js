@@ -164,6 +164,46 @@ async function run() {
       res.send(result);
     });
 
+    // approve / reject adoption request
+    app.patch("/adoption-request/:id", async (req, res) => {
+      const id = req.params.id;
+
+      const { status } = req.body;
+
+      const query = {
+        _id: new ObjectId(id),
+      };
+
+      const updatedDoc = {
+        $set: {
+          status,
+        },
+      };
+
+      const result = await adoptionCollection.updateOne(query, updatedDoc);
+
+      res.send(result);
+    });
+
+    // mark pet as adopted
+    app.patch("/pet/adopt/:id", async (req, res) => {
+      const id = req.params.id;
+
+      const query = {
+        _id: new ObjectId(id),
+      };
+
+      const updatedDoc = {
+        $set: {
+          adopted: true,
+        },
+      };
+
+      const result = await petsCollection.updateOne(query, updatedDoc);
+
+      res.send(result);
+    });
+
     // mongodb ping
     await client.db("admin").command({ ping: 1 });
 
