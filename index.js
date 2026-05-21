@@ -326,7 +326,4 @@ app.get("/", (req, res) => {
   res.send("Home For Paws server is running fine");
 });
 
-// server running
-app.listen(port, () => {
-  console.log(`server running on port ${port}`);
-});
+module.exports = app;
