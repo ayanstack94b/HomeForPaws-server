@@ -1,3 +1,5 @@
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
@@ -12,6 +14,7 @@ const port = process.env.PORT;
 // middleware
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
 
 // mongodb uri
 const uri = process.env.MONGO_URI;
@@ -37,14 +40,76 @@ async function run() {
 
     const adoptionCollection = db.collection("adoptionRequests");
 
-    // get all pets
+    // verify Token middleware
+
+    const verifyToken = (req, res, next) => {
+      const token = req.cookies.token;
+
+      if (!token) {
+        return res.status(401).send({
+          message: "unauthorized access",
+        });
+      }
+
+      jwt.verify(token, process.env.JWT_SECRET, (error, decoded) => {
+        if (error) {
+          return res.status(401).send({
+            message: "unauthorized access",
+          });
+        }
+
+        req.decoded = decoded;
+
+        next();
+      });
+    };
+
+    // jwt token
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+
+      const token = jwt.sign(user, process.env.JWT_SECRET, {
+        expiresIn: "7d",
+      });
+
+      res
+        .cookie("token", token, {
+          httpOnly: true,
+          secure: false,
+        })
+        .send({
+          success: true,
+        });
+    });
+    // All routes starts here
+    // get pets
     app.get("/pet", async (req, res) => {
       const email = req.query.email;
 
+      const search = req.query.search;
+
+      const species = req.query.species;
+
       let query = {};
 
+      // owner filter
       if (email) {
         query.ownerEmail = email;
+      }
+
+      // search filter
+      if (search) {
+        query.petName = {
+          $regex: search,
+          $options: "i",
+        };
+      }
+
+      // species filter
+      if (species) {
+        query.species = {
+          $in: [species],
+        };
       }
 
       const result = await petsCollection.find(query).toArray();
@@ -53,7 +118,7 @@ async function run() {
     });
 
     // add pet
-    app.post("/pet", async (req, res) => {
+    app.post("/pet", verifyToken, async (req, res) => {
       const petData = req.body;
 
       const result = await petsCollection.insertOne(petData);
@@ -105,7 +170,7 @@ async function run() {
     });
 
     // delete pet
-    app.delete("/pet/:id", async (req, res) => {
+    app.delete("/pet/:id", verifyToken, async (req, res)=> {
       const id = req.params.id;
 
       const query = {
@@ -139,7 +204,7 @@ async function run() {
     });
 
     // add adoption request
-    app.post("/adoption-request", async (req, res) => {
+    app.post("/adoption-request",verifyToken, async (req, res) => {
       const adoptionData = req.body;
 
       const query = {
@@ -155,6 +220,17 @@ async function run() {
           inserted: false,
 
           message: "request already exists",
+        });
+      }
+      const pet = await petsCollection.findOne({
+        _id: new ObjectId(adoptionData.petId),
+      });
+
+      if (pet?.adopted) {
+        return res.send({
+          inserted: false,
+
+          message: "pet already adopted",
         });
       }
 
