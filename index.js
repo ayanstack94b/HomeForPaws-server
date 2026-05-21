@@ -39,7 +39,15 @@ async function run() {
 
     // get all pets
     app.get("/pet", async (req, res) => {
-      const result = await petsCollection.find().toArray();
+      const email = req.query.email;
+
+      let query = {};
+
+      if (email) {
+        query.ownerEmail = email;
+      }
+
+      const result = await petsCollection.find(query).toArray();
 
       res.send(result);
     });
@@ -113,9 +121,17 @@ async function run() {
     app.get("/adoption-request", async (req, res) => {
       const email = req.query.email;
 
-      const query = {
-        adopterEmail: email,
-      };
+      const petId = req.query.petId;
+
+      let query = {};
+
+      if (email) {
+        query.adopterEmail = email;
+      }
+
+      if (petId) {
+        query.petId = petId;
+      }
 
       const result = await adoptionCollection.find(query).toArray();
 
