@@ -49,4 +49,4 @@ nodemon index.js
 
 # 🌐 API Deployment
 
-Deployed on Render / Railway
+Deployed on Vercel
