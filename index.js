@@ -14,7 +14,10 @@ const port = process.env.PORT;
 // middleware
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: [
+      "http://localhost:3000",
+      "https://home-for-paws-client.vercel.app",
+    ],
     credentials: true,
   }),
 );
@@ -35,7 +38,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
 
     // database
     const db = client.db("homeForPawsDB");
@@ -130,7 +133,7 @@ async function run() {
     });
 
     // add pet
-    app.post("/pet",  async (req, res) => {
+    app.post("/pet", async (req, res) => {
       const petData = req.body;
 
       const result = await petsCollection.insertOne(petData);
@@ -182,7 +185,7 @@ async function run() {
     });
 
     // delete pet
-    app.delete("/pet/:id",  async (req, res) => {
+    app.delete("/pet/:id", async (req, res) => {
       const id = req.params.id;
 
       const query = {
@@ -216,7 +219,7 @@ async function run() {
     });
 
     // add adoption request
-    app.post("/adoption-request",  async (req, res) => {
+    app.post("/adoption-request", async (req, res) => {
       const adoptionData = req.body;
 
       const query = {
@@ -309,7 +312,7 @@ async function run() {
     });
 
     // mongodb ping
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
 
     console.log("mongodb connected successfully");
   } finally {
