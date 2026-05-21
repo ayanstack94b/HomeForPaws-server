@@ -14,10 +14,18 @@ const port = process.env.PORT;
 // middleware
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "https://home-for-paws-client.vercel.app",
-    ],
+    origin: function (origin, callback) {
+      const allowedOrigins = [
+        "http://localhost:3000",
+        "https://home-for-paws-client.vercel.app",
+      ];
+
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   }),
 );
